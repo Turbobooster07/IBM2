@@ -11,6 +11,9 @@ node_modules/
 backend/.env
 frontend/.env
 
+# Data Storage (Ignore user uploads and history)
+backend/data/
+
 # Production builds
 dist/
 **/dist/

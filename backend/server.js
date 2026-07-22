@@ -2,84 +2,193 @@ import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
 import pdfParse from 'pdf-parse';
+import mammoth from 'mammoth';
+import * as xlsx from 'xlsx';
 import dotenv from 'dotenv';
 import Groq from 'groq-sdk';
+import fs from 'fs';
+import path from 'path';
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Enable CORS and JSON parsing
 app.use(cors());
 app.use(express.json());
 
-// Set up multer memory storage for file uploads
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
+const DATA_DIR = path.join(process.cwd(), 'data');
+const HISTORY_FILE = path.join(DATA_DIR, 'history.json');
+
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
+if (!fs.existsSync(HISTORY_FILE)) {
+  fs.writeFileSync(HISTORY_FILE, JSON.stringify([], null, 2));
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, DATA_DIR);
   },
+  filename: (req, file, cb) => {
+    const fileId = Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+    req.fileId = fileId;
+    const ext = path.extname(file.originalname);
+    cb(null, fileId + ext);
+  }
 });
 
-// Server-side cache for analyzed documents (using Map for simplicity)
-const documentCache = new Map();
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+});
 
-// Helper to initialize Groq client
 const getGroqClient = (req) => {
   const apiKey = req.headers['x-api-key'] || process.env.GROQ_API_KEY;
-  if (!apiKey) {
-    throw new Error('API_KEY_MISSING');
-  }
+  if (!apiKey) throw new Error('API_KEY_MISSING');
   return new Groq({ apiKey });
 };
 
-// Health Check
+const readHistory = () => {
+  try {
+    const data = fs.readFileSync(HISTORY_FILE, 'utf-8');
+    return JSON.parse(data);
+  } catch (e) {
+    return [];
+  }
+};
+
+const writeHistory = (history) => {
+  fs.writeFileSync(HISTORY_FILE, JSON.stringify(history, null, 2));
+};
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
-// PDF Ingestion and Analysis Endpoint
+app.get('/api/history', (req, res) => {
+  const history = readHistory();
+  history.sort((a, b) => b.timestamp - a.timestamp);
+  res.json(history);
+});
+
+app.get('/api/file/:fileId', (req, res) => {
+  const { fileId } = req.params;
+  const history = readHistory();
+  const docData = history.find(h => h.fileId === fileId);
+  if (!docData) return res.status(404).send('Not found');
+
+  const filePath = path.join(DATA_DIR, fileId + docData.extension);
+  if (fs.existsSync(filePath)) {
+    res.setHeader('Content-Type', docData.mimeType);
+    res.sendFile(filePath);
+  } else {
+    res.status(404).send('File not found on disk');
+  }
+});
+
+app.delete('/api/history/:fileId', (req, res) => {
+  const { fileId } = req.params;
+  let history = readHistory();
+  const docData = history.find(h => h.fileId === fileId);
+  if (!docData) return res.status(404).json({ error: 'Not found' });
+
+  history = history.filter(h => h.fileId !== fileId);
+  writeHistory(history);
+
+  try {
+    const filePath = path.join(DATA_DIR, fileId + docData.extension);
+    const textPath = path.join(DATA_DIR, fileId + '_text.txt');
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    if (fs.existsSync(textPath)) fs.unlinkSync(textPath);
+  } catch(e) {}
+
+  res.json({ success: true });
+});
+
 app.post('/api/upload', upload.single('file'), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded.' });
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
+
+    const mime = req.file.mimetype;
+    const isPDF = mime === 'application/pdf';
+    const isWord = mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    const isExcel = mime === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || mime === 'application/vnd.ms-excel';
+    const isText = mime === 'text/plain';
+    const isImage = mime.startsWith('image/');
+    
+    if (!isPDF && !isWord && !isExcel && !isText && !isImage) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ error: 'Unsupported file type.' });
     }
 
-    if (req.file.mimetype !== 'application/pdf') {
-      return res.status(400).json({ error: 'Only PDF files are supported.' });
-    }
+    console.log(`Received file: ${req.file.originalname} (${req.file.size} bytes) [${mime}]`);
 
-    console.log(`Received file: ${req.file.originalname} (${req.file.size} bytes)`);
-
-    // Parse the PDF
-    let pdfData;
-    try {
-      pdfData = await pdfParse(req.file.buffer);
-    } catch (parseError) {
-      console.error('PDF parsing error:', parseError);
-      return res.status(400).json({ error: 'Failed to extract text from PDF. The file may be corrupt or scanned.' });
-    }
-
-    const documentText = pdfData.text.trim();
-    if (!documentText) {
-      return res.status(400).json({ error: 'Extracted text is empty. This PDF might contain only images/scans.' });
-    }
-
-    console.log(`Successfully extracted ${documentText.length} characters of text.`);
-
-    // Initialize Groq client
+    let documentText = '';
     let groq;
     try {
       groq = getGroqClient(req);
     } catch (apiKeyError) {
-      return res.status(401).json({
-        error: 'Groq API Key is missing. Please provide it in the API Key Settings.',
-        code: 'API_KEY_MISSING'
-      });
+      fs.unlinkSync(req.file.path);
+      return res.status(401).json({ error: 'Groq API Key is missing.', code: 'API_KEY_MISSING' });
     }
 
-    const prompt = `You are an expert document analyzer. Analyze the following extracted text from a PDF document.
+    try {
+      const fileBuffer = fs.readFileSync(req.file.path);
+
+      if (isPDF) {
+        const pdfData = await pdfParse(fileBuffer);
+        documentText = pdfData.text.trim();
+      } else if (isWord) {
+        const result = await mammoth.extractRawText({ buffer: fileBuffer });
+        documentText = result.value.trim();
+      } else if (isExcel) {
+        const workbook = xlsx.read(fileBuffer, { type: 'buffer' });
+        const sheetNames = workbook.SheetNames;
+        for (const sheetName of sheetNames) {
+          const sheet = workbook.Sheets[sheetName];
+          documentText += `\n--- Sheet: ${sheetName} ---\n`;
+          documentText += xlsx.utils.sheet_to_csv(sheet);
+        }
+        documentText = documentText.trim();
+      } else if (isText) {
+        documentText = fileBuffer.toString('utf-8').trim();
+      } else if (isImage) {
+        const base64Image = fileBuffer.toString('base64');
+        const visionCompletion = await groq.chat.completions.create({
+          messages: [
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: 'Transcribe all the text in this image accurately. Do not add any conversational filler, just output the exact text found in the image.' },
+                { type: 'image_url', image_url: { url: `data:${mime};base64,${base64Image}` } }
+              ]
+            }
+          ],
+          model: 'llama-3.2-90b-vision-preview',
+          temperature: 0.1,
+        });
+        documentText = visionCompletion.choices[0].message.content.trim();
+      }
+    } catch (parseError) {
+      console.error('File parsing error:', parseError);
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ error: 'Failed to extract text from the file.' });
+    }
+
+    if (!documentText) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ error: 'Extracted text is empty or could not be found.' });
+    }
+
+    console.log(`Successfully extracted ${documentText.length} characters of text.`);
+    
+    const fileId = req.fileId;
+    fs.writeFileSync(path.join(DATA_DIR, fileId + '_text.txt'), documentText);
+
+    const prompt = `You are an expert document analyzer. Analyze the following extracted text from a document.
 Provide your analysis strictly in JSON format. The response must be a single JSON object.
 Use the following keys:
 - documentType: A short classification (e.g. "Invoice", "Receipt", "Resume", "Contract", "Technical Report", "Manual", "Research Paper", "Unknown").
@@ -87,13 +196,12 @@ Use the following keys:
 - entities: An array of key-value pairs, where each item is { "key": "entity name", "value": "extracted value" }. Focus on critical identifiers (e.g., dates, names, totals, reference numbers, companies, key items, topics, contact info).
 - confidence: A percentage integer (0-100) representing how confident you are in this extraction.
 
-Extracted PDF Text:
+Extracted Document Text:
 ---
 ${documentText.slice(0, 50000)}
 ---
 Note: If the text was truncated, analyze the provided slice.`;
 
-    console.log('Sending text to Groq for initial analysis...');
     const completion = await groq.chat.completions.create({
       messages: [{ role: 'user', content: prompt }],
       model: 'llama-3.3-70b-versatile',
@@ -102,113 +210,84 @@ Note: If the text was truncated, analyze the provided slice.`;
     });
 
     const responseText = completion.choices[0].message.content;
-    console.log('Groq analysis complete.');
-
     let analysisResult;
     try {
       analysisResult = JSON.parse(responseText);
     } catch (jsonError) {
-      console.error('Error parsing Groq JSON response:', responseText);
-      analysisResult = {
-        documentType: 'Unknown',
-        summary: 'Error parsing summary details.',
-        entities: [],
-        confidence: 0
-      };
+      analysisResult = { documentType: 'Unknown', summary: 'Error parsing summary.', entities: [], confidence: 0 };
     }
 
-    // Generate a unique file ID
-    const fileId = Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
-
-    // Store in cache
-    const cacheData = {
-      filename: req.file.originalname,
-      text: documentText,
-      analysis: analysisResult,
-      timestamp: Date.now()
-    };
-    documentCache.set(fileId, cacheData);
-
-    // Clean up cache if it gets too large (> 50 documents)
-    if (documentCache.size > 50) {
-      const oldestKey = documentCache.keys().next().value;
-      documentCache.delete(oldestKey);
-    }
-
-    res.json({
+    const history = readHistory();
+    const newEntry = {
       fileId,
       filename: req.file.originalname,
+      mimeType: mime,
+      extension: path.extname(req.file.originalname),
       analysis: analysisResult,
-    });
+      fileSize: req.file.size,
+      timestamp: Date.now()
+    };
+    history.push(newEntry);
+    writeHistory(history);
 
+    res.json(newEntry);
   } catch (error) {
-    console.error('Server error during upload:', error);
-    if (error.status === 429) {
-      return res.status(429).json({ error: 'Groq API rate limit reached. Please wait a moment and try again.' });
-    }
-    res.status(500).json({ error: 'An unexpected error occurred on the server.' });
+    console.error('Server error:', error);
+    require('fs').writeFileSync('error.txt', String(error.stack || error));
+    if (error.status === 429) return res.status(429).json({ error: 'Groq API rate limit reached.' });
+    res.status(500).json({ error: 'An unexpected error occurred.' });
   }
 });
 
-// PDF Chat/Q&A Endpoint
 app.post('/api/chat', async (req, res) => {
   try {
-    const { fileId, message, chatHistory } = req.body;
+    const { fileId, message } = req.body;
+    if (!fileId || !message) return res.status(400).json({ error: 'Missing fileId or message.' });
 
-    if (!fileId || !message) {
-      return res.status(400).json({ error: 'Missing fileId or message.' });
-    }
+    const history = readHistory();
+    const docData = history.find(h => h.fileId === fileId);
+    if (!docData) return res.status(404).json({ error: 'Document session expired or not found.' });
 
-    const docData = documentCache.get(fileId);
-    if (!docData) {
-      return res.status(404).json({ error: 'Document session expired or not found. Please upload the PDF again.' });
-    }
-
-    // Initialize Groq client
     let groq;
     try {
       groq = getGroqClient(req);
-    } catch (apiKeyError) {
-      return res.status(401).json({
-        error: 'Groq API Key is missing. Please check your settings.',
-        code: 'API_KEY_MISSING'
-      });
+    } catch (e) {
+      return res.status(401).json({ error: 'Groq API Key is missing.' });
+    }
+    
+    let documentText = '';
+    const textPath = path.join(DATA_DIR, fileId + '_text.txt');
+    if (fs.existsSync(textPath)) {
+      documentText = fs.readFileSync(textPath, 'utf-8');
+    } else {
+      return res.status(404).json({ error: 'Extracted text not found on server.' });
     }
 
-    const systemPrompt = `You are an AI assistant helping a user analyze a PDF document named "${docData.filename}".
+    const systemPrompt = `You are an AI assistant helping a user analyze a document named "${docData.filename}".
 Use the following extracted document text as your primary context to answer the user's question.
 If the answer cannot be found in the text, politely state that the document does not contain that information.
 Keep your answers clear, accurate, and concise.
+For long or detailed answers, ALWAYS format your response using bulleted lists for easy readability.
 
 Document Text:
 ---
-${docData.text.slice(0, 80000)}
+${documentText.slice(0, 80000)}
 ---`;
 
-    console.log(`Generating chat response for file: ${docData.filename}`);
-
     const completion = await groq.chat.completions.create({
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: message },
-      ],
+      messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: message }],
       model: 'llama-3.3-70b-versatile',
       temperature: 0.3,
     });
 
-    const responseText = completion.choices[0].message.content;
-
-    res.json({ reply: responseText });
-
+    res.json({ reply: completion.choices[0].message.content });
   } catch (error) {
-    console.error('Server error during chat:', error);
-    if (error.status === 429) {
-      return res.status(429).json({ error: 'Groq API rate limit reached. Please wait a moment and try again.' });
-    }
+    console.error('Chat error:', error);
+    if (error.status === 429) return res.status(429).json({ error: 'Groq API rate limit reached.' });
     res.status(500).json({ error: 'An unexpected error occurred during chat processing.' });
   }
 });
 
-app.listen(port, () => {
-  console.log(`Backend server is running on port ${port}`);
+app.listen(port, '127.0.0.1', () => {
+  console.log(`Backend server is running on http://127.0.0.1:${port}`);
 });

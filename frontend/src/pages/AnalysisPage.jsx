@@ -12,7 +12,7 @@ function AnalysisPage() {
   const { fileData } = useApp();
 
   // Data passed from UploadPage via navigate()
-  const { fileId, analysis, filename, fileSize } = location.state || {};
+  const { fileId, analysis, filename, fileSize, mimeType } = location.state || {};
 
   // Normalize entities to always be an array of { key, value }
   const getNormalizedEntities = () => {
@@ -133,8 +133,16 @@ function AnalysisPage() {
         body: JSON.stringify({ fileId, message: userMessage }),
       });
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Failed to get chat response.');
+      let data;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        throw new Error(text || 'Server returned an empty or invalid response');
+      }
+
+      if (!response.ok) throw new Error(data?.error || 'Failed to get chat response.');
       setMessages((prev) => [...prev, { sender: 'bot', text: data.reply }]);
     } catch (err) {
       setMessages((prev) => [
@@ -178,12 +186,24 @@ function AnalysisPage() {
                 {filename}
               </span>
             </div>
-            {fileData?.fileUrl ? (
-              <iframe
-                src={`${fileData.fileUrl}#toolbar=1`}
-                className="pdf-iframe"
-                title="PDF Viewer"
-              />
+            {(fileData?.fileUrl || fileId) ? (
+              mimeType === 'application/pdf' ? (
+                <iframe
+                  src={fileData?.fileUrl ? `${fileData.fileUrl}#toolbar=1` : `/api/file/${fileId}#toolbar=1`}
+                  className="pdf-iframe"
+                  title="PDF Viewer"
+                />
+              ) : mimeType?.startsWith('image/') ? (
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1f2937', padding: '1rem', overflow: 'hidden' }}>
+                  <img src={fileData?.fileUrl || `/api/file/${fileId}`} alt="Document Preview" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '4px' }} />
+                </div>
+              ) : (
+                <div className="pdf-fallback-container">
+                  <FileText size={48} className="pdf-fallback-icon" />
+                  <h3 style={{ marginBottom: '0.5rem' }}>Content Extracted</h3>
+                  <p>Text has been successfully extracted from this file.</p>
+                </div>
+              )
             ) : (
               <div className="pdf-fallback-container">
                 <AlertCircle size={40} className="pdf-fallback-icon" />

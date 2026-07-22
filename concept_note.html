@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AeroScan – Concept Note</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <style>
+    :root {
+      /* IBM Carbon Design System Colors */
+      --blue-60: #0f62fe;
+      --blue-70: #0043ce;
+      --blue-80: #002d9c;
+      --blue-90: #001d6c;
+      --gray-10: #f4f4f4;
+      --gray-20: #e0e0e0;
+      --gray-60: #525252;
+      --gray-80: #393939;
+      --gray-100: #161616;
+      --white: #ffffff;
+
+      --text-primary: var(--gray-100);
+      --text-secondary: var(--gray-80);
+      --text-muted: var(--gray-60);
+
+      --bg-page: var(--gray-10);
+      --bg-surface: var(--white);
+      --border-color: var(--gray-20);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'IBM Plex Sans', sans-serif;
+      background: var(--bg-page);
+      color: var(--text-primary);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Document Container ── */
+    .document {
+      max-width: 900px;
+      margin: 40px auto;
+      background: var(--bg-surface);
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+      border: 1px solid var(--border-color);
+    }
+
+    /* ── Cover Page ── */
+    .cover {
+      min-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      padding: 80px 80px;
+      position: relative;
+      border-bottom: 1px solid var(--border-color);
+      page-break-after: always;
+    }
+
+    .cover-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: auto;
+    }
+
+    .cover-ibm-logo {
+      font-weight: 700;
+      font-size: 24px;
+      letter-spacing: 2px;
+      color: var(--blue-60);
+    }
+
+    .cover-tag {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .cover-title-group {
+      margin-top: 80px;
+      margin-bottom: 120px;
+    }
+
+    .cover h1 {
+      font-size: 56px;
+      font-weight: 300;
+      color: var(--text-primary);
+      line-height: 1.1;
+      margin-bottom: 16px;
+      letter-spacing: -0.5px;
+    }
+
+    .cover h1 strong {
+      font-weight: 700;
+      color: var(--blue-60);
+    }
+
+    .cover-subtitle {
+      font-size: 20px;
+      color: var(--text-secondary);
+      font-weight: 400;
+      max-width: 600px;
+    }
+
+    .cover-meta {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 30px;
+      border-top: 1px solid var(--border-color);
+      padding-top: 40px;
+      margin-top: auto;
+      width: 100%;
+    }
+
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .meta-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 500;
+    }
+
+    .meta-value {
+      font-size: 14px;
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    /* ── Content Pages ── */
+    .content {
+      padding: 60px 80px;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 40px;
+    }
+
+    .page-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--blue-60);
+    }
+
+    .page-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* ── Sections ── */
+    .section {
+      margin-bottom: 56px;
+    }
+
+    .section-num {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--blue-60);
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .section h2 {
+      font-size: 28px;
+      font-weight: 400;
+      color: var(--text-primary);
+      margin-bottom: 24px;
+      letter-spacing: -0.5px;
+    }
+
+    .section p {
+      font-size: 15px;
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+    }
+
+    /* ── Highlight Block ── */
+    .highlight-block {
+      background: var(--gray-10);
+      border-left: 4px solid var(--blue-60);
+      padding: 24px;
+      margin: 24px 0;
+    }
+
+    .highlight-block p {
+      margin-bottom: 0;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    /* ── Feature List ── */
+    .feature-list {
+      list-style: none;
+      margin: 24px 0;
+    }
+
+    .feature-list li {
+      position: relative;
+      padding-left: 24px;
+      margin-bottom: 16px;
+      font-size: 15px;
+      color: var(--text-secondary);
+    }
+
+    .feature-list li::before {
+      content: '■';
+      position: absolute;
+      left: 0;
+      top: 0;
+      color: var(--blue-60);
+      font-size: 12px;
+    }
+
+    .feature-list strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    /* ── Table ── */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 32px 0;
+      font-size: 14px;
+    }
+
+    .data-table th {
+      background: var(--gray-10);
+      color: var(--text-primary);
+      font-weight: 600;
+      text-align: left;
+      padding: 16px;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .data-table td {
+      padding: 16px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      vertical-align: top;
+    }
+
+    .data-table strong {
+      color: var(--text-primary);
+    }
+
+    .badge {
+      display: inline-block;
+      background: var(--blue-60);
+      color: var(--white);
+      padding: 2px 8px;
+      border-radius: 2px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    /* ── Cards Grid ── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: 24px;
+    }
+
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      padding: 24px;
+    }
+
+    .card h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+    }
+
+    .card p {
+      font-size: 14px;
+      margin-bottom: 0;
+    }
+
+    /* ── Data Flow Steps ── */
+    .flow-step {
+      display: flex;
+      margin-bottom: 24px;
+    }
+
+    .flow-num {
+      width: 32px;
+      height: 32px;
+      background: var(--blue-60);
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px;
+      margin-right: 20px;
+      flex-shrink: 0;
+    }
+
+    .flow-content h4 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .flow-content p {
+      font-size: 14px;
+      margin-bottom: 0;
+    }
+
+    .page-break {
+      page-break-before: always;
+    }
+
+    /* ── Print Styles ── */
+    @media print {
+      body {
+        background: var(--white);
+      }
+
+      .document {
+        margin: 0;
+        box-shadow: none;
+        border: none;
+        max-width: 100%;
+      }
+
+      .cover {
+        padding: 40px 0;
+        min-height: auto;
+      }
+
+      .content {
+        padding: 40px 0;
+      }
+
+      .print-btn {
+        display: none !important;
+      }
+    }
+
+    .print-btn {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: var(--blue-60);
+      color: var(--white);
+      border: none;
+      padding: 12px 24px;
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-weight: 500;
+      font-size: 14px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(15, 98, 254, 0.3);
+      z-index: 1000;
+      transition: background 0.2s;
+    }
+
+    .print-btn:hover {
+      background: var(--blue-70);
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="document">
+
+    <!-- ═══════════════════ COVER PAGE ═══════════════════ -->
+    <div class="cover">
+      <div class="cover-header">
+        <div class="cover-ibm-logo">IBM</div>
+        <div class="cover-tag">Project Concept Note</div>
+      </div>
+
+      <div class="cover-title-group">
+        <h1><strong>AeroScan</strong><br />Multimodal AI Intelligence</h1>
+        <div class="cover-subtitle">Enterprise-grade document analysis platform powered by LLaMA 3.3 and Groq Vision
+          API.</div>
+      </div>
+
+      <div class="cover-meta">
+        <div class="meta-item">
+          <span class="meta-label">Project Type</span>
+          <span class="meta-value">Internship Project 2026</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Core Technology</span>
+          <span class="meta-value">Groq Cloud / LLaMA 3.3 70B</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Classification</span>
+          <span class="meta-value">Internal Confidential</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Project Team</span>
+          <span class="meta-value">Team RedBull</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ CONTENT PAGES ═══════════════════ -->
+    <div class="content">
+
+      <div class="page-header">
+        <div class="page-title">AeroScan Concept Note</div>
+        <div class="page-meta">IBM Internship 2026</div>
+      </div>
+
+      <!-- ── SECTION 1 ── -->
+      <div class="section">
+        <span class="section-num">01</span>
+        <h2>Project Identity & Objective</h2>
+        <div class="highlight-block">
+          <p><strong>Application Name:</strong> AeroScan<br />
+            <strong>Project Title:</strong> AI-Powered Multimodal Document Analyzer
+          </p>
+        </div>
+        <p>
+          AeroScan is a full-stack enterprise web application designed to transform how users interact with structured
+          and unstructured documents.
+          The platform leverages state-of-the-art large language models and vision technology to instantly parse,
+          classify, and converse with
+          PDFs, Word Documents, Excel spreadsheets, Text files, and raw images.
+        </p>
+      </div>
+
+      <!-- ── SECTION 2 ── -->
+      <div class="section">
+        <span class="section-num">02</span>
+        <h2>Problem Statement</h2>
+        <p>
+          In today's information-heavy corporate landscape, professionals across industries—finance, legal, healthcare,
+          logistics, and academia—routinely receive dense documents in varied formats. Extracting meaningful, actionable
+          information from invoices, contracts, research papers, technical manuals, and scanned image receipts is a
+          highly manual, error-prone, and cognitively demanding process.
+        </p>
+        <p>
+          Traditional approaches require users to manually read, search, and summarize documents—a process that can
+          consume hours for complex files. Existing enterprise solutions often require expensive licensing, lack natural
+          conversational capabilities, or fail to provide contextual intelligence across varied file formats.
+        </p>
+
+        <div class="highlight-block">
+          <p><strong>Core Objectives:</strong></p>
+          <ul class="feature-list" style="margin-top: 12px; margin-bottom: 0;">
+            <li>Eliminate manual document reading by providing instant AI-generated structured summaries of uploaded
+              files (PDFs, Word Docs, Excel, Text, or Images).</li>
+            <li>Enable users to ask natural-language questions about a document and receive precise, context-aware
+              answers in real time.</li>
+            <li>Automatically classify document types and extract critical entities such as dates, monetary amounts,
+              names, and reference numbers.</li>
+            <li>Deliver a seamless, accessible web interface requiring no technical expertise or configuration from the
+              end user.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- ── SECTION 3 ── -->
+      <div class="section">
+        <span class="section-num">03</span>
+        <h2>Target User & Use Cases</h2>
+        <p>AeroScan serves a broad spectrum of enterprise users who regularly process large volumes of structured and
+          semi-structured data.</p>
+
+        <div class="cards-grid">
+          <div class="card">
+            <h3>Business Professionals</h3>
+            <p>Finance teams, procurement officers, and operations managers processing invoices, purchase orders, and
+              financial reports at scale.</p>
+          </div>
+          <div class="card">
+            <h3>Legal & Compliance</h3>
+            <p>Lawyers and paralegals tasked with rapidly identifying key clauses, effective dates, and parties within
+              lengthy legal agreements.</p>
+          </div>
+          <div class="card">
+            <h3>Researchers & Academics</h3>
+            <p>Analysts requiring rapid comprehension of extensive research papers, technical manuals, and industry
+              publications.</p>
+          </div>
+          <div class="card">
+            <h3>Healthcare Administrators</h3>
+            <p>Clinicians and administrators needing to quickly navigate medical reports, patient summaries, and
+              clinical trial documentation.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-break"></div>
+
+      <div class="page-header">
+        <div class="page-title">AeroScan Concept Note</div>
+        <div class="page-meta">IBM Internship 2026</div>
+      </div>
+
+      <!-- ── SECTION 4 ── -->
+      <div class="section">
+        <span class="section-num">04</span>
+        <h2>AI Infrastructure & Architecture</h2>
+        <p>AeroScan leverages cutting-edge large language model infrastructure via the Groq Cloud API, prioritizing
+          extreme low-latency inference.</p>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Component</th>
+              <th>Technology</th>
+              <th>Role in Application</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>LLM Engine</strong></td>
+              <td><span class="badge">LLaMA 3.3 70B</span></td>
+              <td>Core AI model powering document analysis and conversational Q&A. Offers best-in-class
+                instruction-following and context retention.</td>
+            </tr>
+            <tr>
+              <td><strong>Inference API</strong></td>
+              <td><span class="badge">Groq Cloud</span></td>
+              <td>Ultra-fast LLM inference platform using proprietary LPU™ hardware. Delivers near-instantaneous
+                responses critical for enterprise UX.</td>
+            </tr>
+            <tr>
+              <td><strong>Vision AI</strong></td>
+              <td><span class="badge">LLaMA 3.2 90B Vision</span></td>
+              <td>Utilizes Groq's multimodal capabilities to accurately transcribe and extract text directly from
+                uploaded images and scanned receipts.</td>
+            </tr>
+            <tr>
+              <td><strong>Response Format</strong></td>
+              <td>JSON Object Mode</td>
+              <td>Structured JSON responses enforced for the analysis endpoint, ensuring reliable backend parsing of
+                document type, summary, and entities.</td>
+            </tr>
+            <tr>
+              <td><strong>Document Parsing</strong></td>
+              <td>pdf-parse, mammoth, xlsx</td>
+              <td>Native Node.js libraries to extract raw text buffers from PDFs, Word documents, and Excel spreadsheets
+                before AI processing.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ── SECTION 5 ── -->
+      <div class="section">
+        <span class="section-num">05</span>
+        <h2>Key Platform Features</h2>
+        <ul class="feature-list">
+          <li><strong>Universal File Support:</strong> Seamlessly upload PDFs, DOCX, XLSX, TXT, or raw images (JPG,
+            PNG).</li>
+          <li><strong>Intelligent Classification:</strong> Automatically categorizes documents (e.g., Invoice, Receipt,
+            Resume, Contract, Technical Report).</li>
+          <li><strong>Structured Summarization:</strong> Generates a concise, markdown-formatted summary of core content
+            alongside a confidence score.</li>
+          <li><strong>Entity Extraction:</strong> Identifies and isolates critical data points such as dates, names,
+            amounts, and reference numbers.</li>
+          <li><strong>In-Document Conversational Q&A:</strong> Chat directly with the document using natural language to
+            query specific details.</li>
+          <li><strong>Persistent History:</strong> Secure local caching of analyzed documents allows users to revisit
+            past files without re-processing.</li>
+          <li><strong>Serverless API Management:</strong> Centralized backend key management eliminates the need for
+            end-user API configuration.</li>
+        </ul>
+      </div>
+
+      <!-- ── SECTION 6 ── -->
+      <div class="section">
+        <span class="section-num">06</span>
+        <h2>User Journey & Outcomes</h2>
+
+        <div class="flow-step">
+          <div class="flow-num">1</div>
+          <div class="flow-content">
+            <h4>Upload & Process</h4>
+            <p>User uploads a document via the drag-and-drop interface. The backend determines the file format, extracts
+              raw text, and submits the payload to Groq.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">2</div>
+          <div class="flow-content">
+            <h4>Instant Analysis</h4>
+            <p>Within seconds, the workspace splits to display the original document alongside the AI-generated
+              classification, summary, and extracted entities.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">3</div>
+          <div class="flow-content">
+            <h4>Interactive Q&A</h4>
+            <p>The user interacts with the chat interface to query specific document details. The AI responds precisely
+              using the document as ground truth.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">4</div>
+          <div class="flow-content">
+            <h4>History & Retention</h4>
+            <p>The analyzed document is saved to the local history dashboard, enabling instant retrieval for future
+              sessions without redundant API calls.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer style="text-align: center; margin-top: 40px; margin-bottom: 60px; color: var(--text-muted); font-size: 14px;">
+    <p style="margin-bottom: 4px;">Made with ❤️ by Team RedBull</p>
+    <p>&copy; 2026 all rights reserved</p>
+  </footer>
+
+  <button class="print-btn" onclick="window.print()">Print PDF</button>
+
+</body>
+
+</html>

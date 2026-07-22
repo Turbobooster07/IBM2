@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import UploadPage from './pages/UploadPage';
 import AnalysisPage from './pages/AnalysisPage';
+import InteractiveBackground from './components/InteractiveBackground';
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -44,6 +45,7 @@ class ErrorBoundary extends Component {
 function App() {
   return (
     <AppProvider>
+      <InteractiveBackground />
       <ErrorBoundary>
         <BrowserRouter>
           <Routes>

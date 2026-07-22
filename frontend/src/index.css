@@ -438,6 +438,10 @@ a:hover {
   margin-bottom: 0.5rem;
 }
 
+.summary-markdown .label-text {
+  margin-left: 0.5rem;
+}
+
 /* Document Header Card */
 .doc-header-card {
   background: rgba(139, 92, 246, 0.06);
@@ -864,4 +868,42 @@ a:hover {
   .header {
     padding: 1rem 1.5rem;
   }
+}
+
+/* Interactive Wavy Background */
+.interactive-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.interactive-blob-1 {
+  position: absolute;
+  top: -400px;
+  left: -400px;
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 60%);
+  filter: blur(80px);
+  border-radius: 50%;
+  transition: transform 0.6s cubic-bezier(0.1, 0.8, 0.2, 1);
+  will-change: transform;
+}
+
+.interactive-blob-2 {
+  position: absolute;
+  top: -350px;
+  left: -350px;
+  width: 700px;
+  height: 700px;
+  background: radial-gradient(circle, rgba(6, 182, 212, 0.1) 0%, transparent 60%);
+  filter: blur(60px);
+  border-radius: 50%;
+  transition: transform 1.2s cubic-bezier(0.1, 0.8, 0.2, 1);
+  will-change: transform;
 }
