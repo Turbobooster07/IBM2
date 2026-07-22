@@ -9,7 +9,7 @@ import { useApp } from '../context/AppContext';
 function AnalysisPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { fileData } = useApp();
+  const { fileData, apiKey } = useApp();
 
   // Data passed from UploadPage via navigate()
   const { fileId, analysis, filename, fileSize, mimeType } = location.state || {};
@@ -127,9 +127,14 @@ function AnalysisPage() {
     setIsChatting(true);
 
     try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (apiKey) {
+        headers['x-api-key'] = apiKey;
+      }
+
       const response = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ fileId, message: userMessage }),
       });
 

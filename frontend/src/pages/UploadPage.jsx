@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Upload, AlertCircle, Sparkles, Trash2, FileCheck } from 'lucide-react';
+import { FileText, Upload, AlertCircle, Sparkles, Trash2, FileCheck, Settings } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import SettingsModal from '../components/SettingsModal';
 
 function UploadPage() {
   const navigate = useNavigate();
@@ -13,6 +14,9 @@ function UploadPage() {
   const [uploadError, setUploadError] = useState('');
   const [dragActive, setDragActive] = useState(false);
   const [history, setHistory] = useState([]);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  const { apiKey } = useApp();
 
   // Clean up blob URL on unmount
   useEffect(() => {
@@ -98,8 +102,14 @@ function UploadPage() {
     formData.append('file', file);
 
     try {
+      const headers = {};
+      if (apiKey) {
+        headers['x-api-key'] = apiKey;
+      }
+
       const response = await fetch('/api/upload', {
         method: 'POST',
+        headers,
         body: formData,
       });
 
@@ -147,6 +157,12 @@ function UploadPage() {
             AeroScan
             <span className="logo-tag">AI Analyzer</span>
           </span>
+        </div>
+        <div className="nav-actions">
+          <button className="btn btn-secondary" onClick={() => setIsSettingsOpen(true)}>
+            <Settings size={18} />
+            Settings
+          </button>
         </div>
       </header>
 
@@ -265,6 +281,11 @@ function UploadPage() {
         )}
 
       </main>
+
+      <SettingsModal 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
+      />
     </div>
   );
 }
