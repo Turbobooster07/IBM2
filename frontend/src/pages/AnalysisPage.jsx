@@ -74,45 +74,96 @@ function AnalysisPage() {
     );
   }
 
-  // ─── Helpers ────────────────────────────────────────────────────────────────
+  // ─── Markdown Renderer Helper ───────────────────────────────────────────────
 
-  const parseInlineStyles = (rawText) => {
-    if (typeof rawText !== 'string') {
-      try {
-        rawText = String(rawText || '');
-      } catch (e) {
-        return '';
-      }
-    }
-    return rawText
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/`(.*?)`/g, '<code style="background:rgba(0,0,0,0.3);padding:0.1rem 0.3rem;border-radius:4px;">$1</code>');
-  };
+  const formatMarkdown = (text) => {
+    if (!text) return null;
 
-  const formatText = (text) => {
-    if (!text) return '';
-    let textStr = '';
-    if (Array.isArray(text)) {
-      textStr = text.map(item => typeof item === 'string' ? item : JSON.stringify(item)).join('\n');
-    } else if (typeof text === 'object') {
-      textStr = JSON.stringify(text, null, 2);
-    } else {
-      textStr = String(text);
-    }
+    let textStr = Array.isArray(text)
+      ? text.join('\n')
+      : typeof text === 'object'
+      ? JSON.stringify(text, null, 2)
+      : String(text);
 
-    return textStr.split('\n').map((line, i) => {
-      if (line.trim().startsWith('-') || line.trim().startsWith('*')) {
-        return <li key={i} dangerouslySetInnerHTML={{ __html: parseInlineStyles(line.replace(/^[-*]\s+/, '')) }} />;
+    // Normalize inline bullet lists like "* Item 1 * Item 2" or "* Heading: * Item" into separate new lines
+    textStr = textStr.replace(/([:\w])\s+\*\s+/g, '$1\n- ');
+    textStr = textStr.replace(/([:\w])\s+•\s+/g, '$1\n- ');
+    textStr = textStr.replace(/([^\n])\s+[*•-]\s+([A-Z0-9_])/g, '$1\n- $2');
+
+    const lines = textStr.split('\n');
+    const elements = [];
+    let currentList = [];
+    let listType = null;
+
+    const parseInline = (str) => {
+      if (!str) return '';
+      return str
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/`(.*?)`/g, '<code class="md-code">$1</code>')
+        .replace(/(^|[^\w*])\*([^*]+)\*([^\w*]|$)/g, '$1<em>$2</em>$3');
+    };
+
+    const flushList = () => {
+      if (currentList.length > 0) {
+        const ListTag = listType === 'ol' ? 'ol' : 'ul';
+        const className = listType === 'ol' ? 'md-ol' : 'md-ul';
+        elements.push(
+          <ListTag key={`list-${elements.length}`} className={className}>
+            {currentList.map((item, idx) => (
+              <li key={idx} dangerouslySetInnerHTML={{ __html: parseInline(item) }} />
+            ))}
+          </ListTag>
+        );
+        currentList = [];
+        listType = null;
       }
-      if (line.trim().startsWith('###')) {
-        return <h4 key={i} style={{ marginTop: '1rem', color: 'var(--color-primary-light)' }} dangerouslySetInnerHTML={{ __html: parseInlineStyles(line.replace(/^###\s+/, '')) }} />;
+    };
+
+    lines.forEach((line, index) => {
+      const trimmed = line.trim();
+      if (!trimmed) {
+        flushList();
+        return;
       }
-      if (line.trim().startsWith('##')) {
-        return <h3 key={i} style={{ marginTop: '1.25rem', color: 'var(--text-primary)' }} dangerouslySetInnerHTML={{ __html: parseInlineStyles(line.replace(/^##\s+/, '')) }} />;
+
+      const isUnordered = /^[-*•]\s+/.test(trimmed);
+      const isOrdered = /^\d+[\.\)]\s+/.test(trimmed);
+
+      if (isUnordered || isOrdered) {
+        const targetType = isOrdered ? 'ol' : 'ul';
+        if (listType && listType !== targetType) {
+          flushList();
+        }
+        listType = targetType;
+        const content = trimmed.replace(/^([-*•]|\d+[\.\)])\s+/, '');
+        currentList.push(content);
+        return;
       }
-      return <p key={i} style={{ marginBottom: '0.75rem' }} dangerouslySetInnerHTML={{ __html: parseInlineStyles(line) }} />;
+
+      flushList();
+
+      if (trimmed.startsWith('###')) {
+        elements.push(
+          <h4 key={`h4-${index}`} className="md-h4" dangerouslySetInnerHTML={{ __html: parseInline(trimmed.replace(/^###\s+/, '')) }} />
+        );
+      } else if (trimmed.startsWith('##')) {
+        elements.push(
+          <h3 key={`h3-${index}`} className="md-h3" dangerouslySetInnerHTML={{ __html: parseInline(trimmed.replace(/^##\s+/, '')) }} />
+        );
+      } else if (trimmed.startsWith('#')) {
+        elements.push(
+          <h2 key={`h2-${index}`} className="md-h2" dangerouslySetInnerHTML={{ __html: parseInline(trimmed.replace(/^#\s+/, '')) }} />
+        );
+      } else {
+        elements.push(
+          <p key={`p-${index}`} className="md-p" dangerouslySetInnerHTML={{ __html: parseInline(trimmed) }} />
+        );
+      }
     });
+
+    flushList();
+
+    return <div className="markdown-content">{elements}</div>;
   };
 
   // ─── Chat handler ────────────────────────────────────────────────────────────
@@ -276,7 +327,7 @@ function AnalysisPage() {
                     <Sparkles size={15} className="section-icon" />
                     <span className="section-title">Executive Summary</span>
                   </div>
-                  <div className="summary-markdown">{formatText(analysis.summary)}</div>
+                  <div className="summary-markdown">{formatMarkdown(analysis.summary)}</div>
                 </div>
 
                 {/* Key Entities */}
@@ -311,7 +362,7 @@ function AnalysisPage() {
                         className={`chat-bubble ${msg.sender === 'user' ? 'bubble-user' : 'bubble-bot'}`}
                         key={index}
                       >
-                        <div dangerouslySetInnerHTML={{ __html: parseInlineStyles(msg.text) }} />
+                        {formatMarkdown(msg.text)}
                       </div>
                     ))}
                     {isChatting && (

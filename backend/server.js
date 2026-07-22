@@ -192,13 +192,13 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 Provide your analysis strictly in JSON format. The response must be a single JSON object.
 Use the following keys:
 - documentType: A short classification (e.g. "Invoice", "Receipt", "Resume", "Contract", "Technical Report", "Manual", "Research Paper", "Unknown").
-- summary: A concise, structured bulleted markdown summary of the document's core content.
+- summary: A concise, beautifully structured markdown summary. Always use clear section titles (e.g. ### Overview, ### Key Highlights) and put every bullet point on its own new line starting with "- ". Never format bullet items inline on a single line.
 - entities: An array of key-value pairs, where each item is { "key": "entity name", "value": "extracted value" }. Focus on critical identifiers (e.g., dates, names, totals, reference numbers, companies, key items, topics, contact info).
 - confidence: A percentage integer (0-100) representing how confident you are in this extraction.
 
 Extracted Document Text:
 ---
-${documentText.slice(0, 50000)}
+${documentText.slice(0, 15000)}
 ---
 Note: If the text was truncated, analyze the provided slice.`;
 
@@ -233,8 +233,8 @@ Note: If the text was truncated, analyze the provided slice.`;
     res.json(newEntry);
   } catch (error) {
     console.error('Server error:', error);
-    require('fs').writeFileSync('error.txt', String(error.stack || error));
-    if (error.status === 429) return res.status(429).json({ error: 'Groq API rate limit reached.' });
+    try { fs.writeFileSync('error.txt', String(error.stack || error)); } catch(e) {}
+    if (error.status === 429 || error.status === 413) return res.status(429).json({ error: 'Groq API rate limit or context length reached. Please try a smaller file or try again later.' });
     res.status(500).json({ error: 'An unexpected error occurred.' });
   }
 });
@@ -267,11 +267,15 @@ app.post('/api/chat', async (req, res) => {
 Use the following extracted document text as your primary context to answer the user's question.
 If the answer cannot be found in the text, politely state that the document does not contain that information.
 Keep your answers clear, accurate, and concise.
-For long or detailed answers, ALWAYS format your response using bulleted lists for easy readability.
+
+FORMATTING REQUIREMENTS:
+- Always format your answers using clean Markdown with distinct section headings (e.g., ### Key Findings) and structured bulleted lists.
+- EVERY bullet point MUST be placed on its OWN NEW LINE starting with "- ". Never join multiple bullet points onto the same line or use inline asterisks like "* item1 * item2".
+- When asked for lists, classes, features, steps, or key points, ALWAYS format them as clean bulleted or numbered lists with each item on a separate line.
 
 Document Text:
 ---
-${documentText.slice(0, 80000)}
+${documentText.slice(0, 15000)}
 ---`;
 
     const completion = await groq.chat.completions.create({
