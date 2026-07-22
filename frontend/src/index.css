@@ -907,3 +907,97 @@ a:hover {
   transition: transform 1.2s cubic-bezier(0.1, 0.8, 0.2, 1);
   will-change: transform;
 }
+
+/* ─── Structured Markdown & List Formatting Styles ─────────────────────────── */
+
+.markdown-content {
+  line-height: 1.6;
+  font-size: 0.92rem;
+  color: var(--text-primary);
+  width: 100%;
+}
+
+.markdown-content .md-p {
+  margin-bottom: 0.6rem;
+  line-height: 1.6;
+}
+
+.markdown-content .md-p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-content .md-h2 {
+  font-size: 1.15rem;
+  color: var(--text-primary);
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.markdown-content .md-h3 {
+  font-size: 1.05rem;
+  color: var(--color-primary-light);
+  margin-top: 0.85rem;
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+}
+
+.markdown-content .md-h4 {
+  font-size: 0.95rem;
+  color: var(--color-accent);
+  margin-top: 0.75rem;
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+}
+
+.markdown-content .md-ul,
+.markdown-content .md-ol {
+  margin: 0.5rem 0 0.85rem 1.25rem;
+  padding-left: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.markdown-content .md-ul {
+  list-style-type: disc;
+}
+
+.markdown-content .md-ol {
+  list-style-type: decimal;
+}
+
+.markdown-content li {
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.markdown-content li::marker {
+  color: var(--color-primary-light);
+}
+
+.markdown-content strong {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.markdown-content .md-code {
+  background: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  color: var(--color-primary-light);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.85em;
+}
+
+.bubble-user .markdown-content,
+.bubble-user .markdown-content li,
+.bubble-user .markdown-content strong {
+  color: #ffffff;
+}
+
+.bubble-user .markdown-content li::marker {
+  color: #ffffff;
+}
+
