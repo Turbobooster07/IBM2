@@ -198,7 +198,7 @@ Use the following keys:
 
 Extracted Document Text:
 ---
-${documentText.slice(0, 50000)}
+${documentText.slice(0, 15000)}
 ---
 Note: If the text was truncated, analyze the provided slice.`;
 
@@ -233,8 +233,8 @@ Note: If the text was truncated, analyze the provided slice.`;
     res.json(newEntry);
   } catch (error) {
     console.error('Server error:', error);
-    require('fs').writeFileSync('error.txt', String(error.stack || error));
-    if (error.status === 429) return res.status(429).json({ error: 'Groq API rate limit reached.' });
+    try { fs.writeFileSync('error.txt', String(error.stack || error)); } catch(e) {}
+    if (error.status === 429 || error.status === 413) return res.status(429).json({ error: 'Groq API rate limit or context length reached. Please try a smaller file or try again later.' });
     res.status(500).json({ error: 'An unexpected error occurred.' });
   }
 });
@@ -271,7 +271,7 @@ For long or detailed answers, ALWAYS format your response using bulleted lists f
 
 Document Text:
 ---
-${documentText.slice(0, 80000)}
+${documentText.slice(0, 15000)}
 ---`;
 
     const completion = await groq.chat.completions.create({
