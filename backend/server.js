@@ -103,7 +103,7 @@ app.delete('/api/history/:fileId', (req, res) => {
     const textPath = path.join(DATA_DIR, fileId + '_text.txt');
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     if (fs.existsSync(textPath)) fs.unlinkSync(textPath);
-  } catch(e) {}
+  } catch (e) { }
 
   res.json({ success: true });
 });
@@ -118,7 +118,7 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     const isExcel = mime === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || mime === 'application/vnd.ms-excel';
     const isText = mime === 'text/plain';
     const isImage = mime.startsWith('image/');
-    
+
     if (!isPDF && !isWord && !isExcel && !isText && !isImage) {
       fs.unlinkSync(req.file.path);
       return res.status(400).json({ error: 'Unsupported file type.' });
@@ -184,7 +184,7 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     }
 
     console.log(`Successfully extracted ${documentText.length} characters of text.`);
-    
+
     const fileId = req.fileId;
     fs.writeFileSync(path.join(DATA_DIR, fileId + '_text.txt'), documentText);
 
@@ -233,7 +233,7 @@ Note: If the text was truncated, analyze the provided slice.`;
     res.json(newEntry);
   } catch (error) {
     console.error('Server error:', error);
-    try { fs.writeFileSync('error.txt', String(error.stack || error)); } catch(e) {}
+    try { fs.writeFileSync('error.txt', String(error.stack || error)); } catch (e) { }
     if (error.status === 429 || error.status === 413) return res.status(429).json({ error: 'Groq API rate limit or context length reached. Please try a smaller file or try again later.' });
     res.status(500).json({ error: 'An unexpected error occurred.' });
   }
@@ -254,7 +254,7 @@ app.post('/api/chat', async (req, res) => {
     } catch (e) {
       return res.status(401).json({ error: 'Groq API Key is missing.' });
     }
-    
+
     let documentText = '';
     const textPath = path.join(DATA_DIR, fileId + '_text.txt');
     if (fs.existsSync(textPath)) {
@@ -292,6 +292,6 @@ ${documentText.slice(0, 15000)}
   }
 });
 
-app.listen(port, '127.0.0.1', () => {
-  console.log(`Backend server is running on http://127.0.0.1:${port}`);
+app.listen(port, () => {
+  console.log(`Backend server is running on port ${port}`);
 });
