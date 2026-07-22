@@ -17,10 +17,11 @@ function UploadPage() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const { apiKey } = useApp();
+  const apiUrl = import.meta.env.VITE_API_URL || '';
 
   // Clean up blob URL on unmount
   useEffect(() => {
-    fetch('/api/history')
+    fetch(`${apiUrl}/api/history`)
       .then(res => res.json())
       .then(data => setHistory(Array.isArray(data) ? data : []))
       .catch(err => console.error('Failed to load history:', err));
@@ -33,7 +34,7 @@ function UploadPage() {
   const handleDeleteHistory = async (e, fileId) => {
     e.stopPropagation();
     try {
-      await fetch(`/api/history/${fileId}`, { method: 'DELETE' });
+      await fetch(`${apiUrl}/api/history/${fileId}`, { method: 'DELETE' });
       setHistory(prev => prev.filter(h => h.fileId !== fileId));
     } catch (err) {
       console.error('Failed to delete history item', err);
@@ -107,7 +108,7 @@ function UploadPage() {
         headers['x-api-key'] = apiKey;
       }
 
-      const response = await fetch('/api/upload', {
+      const response = await fetch(`${apiUrl}/api/upload`, {
         method: 'POST',
         headers,
         body: formData,

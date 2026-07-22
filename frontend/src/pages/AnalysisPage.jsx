@@ -10,6 +10,7 @@ function AnalysisPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { fileData, apiKey } = useApp();
+  const apiUrl = import.meta.env.VITE_API_URL || '';
 
   // Data passed from UploadPage via navigate()
   const { fileId, analysis, filename, fileSize, mimeType } = location.state || {};
@@ -183,7 +184,7 @@ function AnalysisPage() {
         headers['x-api-key'] = apiKey;
       }
 
-      const response = await fetch('/api/chat', {
+      const response = await fetch(`${apiUrl}/api/chat`, {
         method: 'POST',
         headers,
         body: JSON.stringify({ fileId, message: userMessage }),
@@ -245,13 +246,13 @@ function AnalysisPage() {
             {(fileData?.fileUrl || fileId) ? (
               mimeType === 'application/pdf' ? (
                 <iframe
-                  src={fileData?.fileUrl ? `${fileData.fileUrl}#toolbar=1` : `/api/file/${fileId}#toolbar=1`}
+                  src={fileData?.fileUrl ? `${fileData.fileUrl}#toolbar=1` : `${apiUrl}/api/file/${fileId}#toolbar=1`}
                   className="pdf-iframe"
                   title="PDF Viewer"
                 />
               ) : mimeType?.startsWith('image/') ? (
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1f2937', padding: '1rem', overflow: 'hidden' }}>
-                  <img src={fileData?.fileUrl || `/api/file/${fileId}`} alt="Document Preview" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '4px' }} />
+                  <img src={fileData?.fileUrl || `${apiUrl}/api/file/${fileId}`} alt="Document Preview" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '4px' }} />
                 </div>
               ) : (
                 <div className="pdf-fallback-container">
