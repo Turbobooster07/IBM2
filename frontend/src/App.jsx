@@ -1,9 +1,10 @@
-import React, { Component } from 'react';
+import React, { Component, useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import UploadPage from './pages/UploadPage';
 import AnalysisPage from './pages/AnalysisPage';
 import InteractiveBackground from './components/InteractiveBackground';
+import PageLoader from './components/PageLoader';
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -43,16 +44,21 @@ class ErrorBoundary extends Component {
 }
 
 function App() {
+  const [isAppLoaded, setIsAppLoaded] = useState(false);
+
   return (
     <AppProvider>
+      {!isAppLoaded && <PageLoader onComplete={() => setIsAppLoaded(true)} />}
       <InteractiveBackground />
       <ErrorBoundary>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<UploadPage />} />
-            <Route path="/analysis" element={<AnalysisPage />} />
-          </Routes>
-        </BrowserRouter>
+        {isAppLoaded && (
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<UploadPage />} />
+              <Route path="/analysis" element={<AnalysisPage />} />
+            </Routes>
+          </BrowserRouter>
+        )}
       </ErrorBoundary>
     </AppProvider>
   );

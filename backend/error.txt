@@ -1,0 +1,6 @@
+Error: 401 {"error":{"message":"Invalid API Key","type":"invalid_request_error","code":"invalid_api_key"}}
+    at APIError.generate (file:///C:/Users/ayaan/OneDrive/Documents/IBM2/backend/node_modules/groq-sdk/core/error.mjs:39:20)
+    at Groq.makeStatusError (file:///C:/Users/ayaan/OneDrive/Documents/IBM2/backend/node_modules/groq-sdk/client.mjs:135:32)
+    at Groq.makeRequest (file:///C:/Users/ayaan/OneDrive/Documents/IBM2/backend/node_modules/groq-sdk/client.mjs:277:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///C:/Users/ayaan/OneDrive/Documents/IBM2/backend/server.js:205:24

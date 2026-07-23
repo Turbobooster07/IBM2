@@ -1,10 +1,43 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Upload, AlertCircle, Sparkles, Trash2, FileCheck, Settings } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import SettingsModal from '../components/SettingsModal';
+import gsap from 'gsap';
+import { useGSAP } from '@gsap/react';
 
 function UploadPage() {
+  const containerRef = useRef();
+
+  useGSAP(() => {
+    // Elegant header drop down
+    gsap.from('.header', { 
+      y: -50, opacity: 0, duration: 1, ease: 'expo.out' 
+    });
+
+    // 3D "Coming out to screen" pop effect for the upload box
+    gsap.from('.upload-container', { 
+      scale: 0.85, 
+      y: 40, 
+      opacity: 0, 
+      rotationX: 10, 
+      transformPerspective: 1000, 
+      duration: 1.2, 
+      delay: 0.2, 
+      ease: 'back.out(1.5)' 
+    });
+
+    // Similar pop for history container
+    gsap.from('.history-container', { 
+      scale: 0.9, 
+      y: 30, 
+      opacity: 0, 
+      duration: 1, 
+      delay: 0.35, 
+      ease: 'back.out(1.2)' 
+    });
+  }, { scope: containerRef });
+
   const navigate = useNavigate();
   const { setFileData } = useApp();
 
@@ -149,7 +182,7 @@ function UploadPage() {
   };
 
   return (
-    <div className="app-container">
+    <div className="app-container" ref={containerRef}>
       {/* Header */}
       <header className="header">
         <div className="logo-section">
@@ -237,7 +270,16 @@ function UploadPage() {
         {/* Step 3: Processing loader */}
         {isUploading && (
           <div className="loading-overlay">
-            <div className="spinner"></div>
+            <div className="document-scanner-loader">
+              <div className="doc-icon">
+                <div className="doc-line"></div>
+                <div className="doc-line short"></div>
+                <div className="doc-line"></div>
+                <div className="doc-line"></div>
+                <div className="doc-line short"></div>
+              </div>
+              <div className="magnifying-glass"></div>
+            </div>
             <h3 className="loading-text">Analyzing Document</h3>
             <p className="loading-subtext">Extracting structure, summarizing contents, and mapping key entities using Groq AI...</p>
           </div>
