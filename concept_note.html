@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AeroScan – Concept Note</title>
+  <title>AeroScan</title>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap"
     rel="stylesheet" />
   <style>
@@ -51,6 +51,14 @@
       background: var(--bg-surface);
       box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
       border: 1px solid var(--border-color);
+    }
+
+    @media print {
+      @page { margin: 0; }
+      body { margin: 1.6cm; background: white; }
+      .document { margin: 0; max-width: 100%; box-shadow: none; border: none; }
+      .print-btn { display: none !important; }
+      footer { display: none !important; }
     }
 
     /* ── Cover Page ── */
@@ -114,7 +122,7 @@
 
     .cover-meta {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 30px;
       border-top: 1px solid var(--border-color);
       padding-top: 40px;
@@ -350,12 +358,17 @@
       }
 
       .cover {
-        padding: 40px 0;
+        padding: 0;
         min-height: auto;
       }
 
       .content {
-        padding: 40px 0;
+        padding: 0;
+      }
+
+      .section, .card, .flow-step, .highlight-block {
+        page-break-inside: avoid;
+        break-inside: avoid;
       }
 
       .print-btn {
@@ -393,8 +406,7 @@
     <!-- ═══════════════════ COVER PAGE ═══════════════════ -->
     <div class="cover">
       <div class="cover-header">
-        <div class="cover-ibm-logo">IBM</div>
-        <div class="cover-tag">Project Concept Note</div>
+        <div class="cover-tag" style="margin-left: auto;">Project Overview</div>
       </div>
 
       <div class="cover-title-group">
@@ -412,10 +424,7 @@
           <span class="meta-label">Core Technology</span>
           <span class="meta-value">Groq Cloud / LLaMA 3.3 70B</span>
         </div>
-        <div class="meta-item">
-          <span class="meta-label">Classification</span>
-          <span class="meta-value">Internal Confidential</span>
-        </div>
+
         <div class="meta-item">
           <span class="meta-label">Project Team</span>
           <span class="meta-value">Team RedBull</span>
@@ -426,10 +435,7 @@
     <!-- ═══════════════════ CONTENT PAGES ═══════════════════ -->
     <div class="content">
 
-      <div class="page-header">
-        <div class="page-title">AeroScan Concept Note</div>
-        <div class="page-meta">IBM Internship 2026</div>
-      </div>
+
 
       <!-- ── SECTION 1 ── -->
       <div class="section">
@@ -513,10 +519,7 @@
 
       <div class="page-break"></div>
 
-      <div class="page-header">
-        <div class="page-title">AeroScan Concept Note</div>
-        <div class="page-meta">IBM Internship 2026</div>
-      </div>
+
 
       <!-- ── SECTION 4 ── -->
       <div class="section">

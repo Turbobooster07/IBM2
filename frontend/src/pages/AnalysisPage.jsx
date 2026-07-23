@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   FileText, Sparkles, HelpCircle, Send, RefreshCw,
-  AlertCircle, ArrowLeft
+  AlertCircle, ArrowLeft, Download
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import html2pdf from 'html2pdf.js';
 
 function AnalysisPage() {
   const location = useLocation();
@@ -211,6 +212,21 @@ function AnalysisPage() {
     }
   };
 
+  const handleDownloadPdf = () => {
+    const element = document.getElementById('pdf-content');
+    if (!element) return;
+    
+    const opt = {
+      margin:       [10, 10, 10, 10], // top, left, bottom, right in mm
+      filename:     `${filename ? filename.split('.')[0] : 'concept-note'}-analysis.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    
+    html2pdf().set(opt).from(element).save();
+  };
+
   // ─── Render ─────────────────────────────────────────────────────────────────
 
   return (
@@ -224,7 +240,13 @@ function AnalysisPage() {
             <span className="logo-tag">AI Analyzer</span>
           </span>
         </div>
-        <div className="nav-actions">
+        <div className="nav-actions" style={{ display: 'flex', gap: '0.5rem' }}>
+          {activeTab === 'summary' && (
+            <button className="btn btn-primary" onClick={handleDownloadPdf}>
+              <Download size={16} />
+              Download PDF
+            </button>
+          )}
           <button className="btn btn-secondary" onClick={() => navigate('/')}>
             <ArrowLeft size={16} />
             New Analysis
@@ -291,7 +313,7 @@ function AnalysisPage() {
 
             {/* ── Analysis Tab ── */}
             {activeTab === 'summary' && (
-              <div className="tab-content">
+              <div className="tab-content" id="pdf-content">
 
                 {/* Document header card */}
                 <div className="doc-header-card">
