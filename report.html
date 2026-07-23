@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Development Report: AI Document Analyzer</title>
+    <style>
+        :root {
+            --primary: #000000;
+            --bg: #ffffff;
+            --bg-card: #ffffff;
+            --text-main: #111827;
+            --text-muted: #4b5563;
+            --border: #e5e7eb;
+            --accent: #374151;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 5px;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            color: var(--primary);
+            margin-top: 35px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        h3 {
+            color: var(--text-main);
+            margin-top: 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            padding: 10px 0;
+            margin-bottom: 20px;
+        }
+
+        .tech-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .tag {
+            background-color: #f3f4f6;
+            color: #374151;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border: 1px solid #d1d5db;
+        }
+
+        code {
+            background-color: #f3f4f6;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: 'Courier New', Courier, monospace;
+            color: #1f2937;
+            font-size: 0.9em;
+            border: 1px solid #e5e7eb;
+        }
+
+        pre {
+            background-color: #f9fafb;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            overflow-x: auto;
+            color: #111827;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+
+        .highlight {
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+        
+        .phase {
+            margin-bottom: 20px;
+        }
+        
+        .phase-title {
+            font-weight: bold;
+            color: var(--text-main);
+            font-size: 1.05rem;
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Project Development Report</h1>
+        <div class="subtitle">AI-Powered Document Analyzer</div>
+    </header>
+
+    <div class="card">
+        <h2>Application Overview & Tech Stack</h2>
+        <p>The AI Document Analyzer is an intelligent, full-stack web application designed to extract, analyze, and interact with various document formats including PDFs, Word Documents, Excel sheets, text files, and images. It leverages advanced Large Language Models (LLMs) to automatically generate structured summaries, extract key entities, classify document types, and provide a conversational interface for users to query the contents of their uploaded files.</p>
+        
+        <h3>Technology Stack</h3>
+        <div class="tech-tags">
+            <span class="tag">React.js</span>
+            <span class="tag">Vite</span>
+            <span class="tag">Node.js</span>
+            <span class="tag">Express.js</span>
+            <span class="tag">Groq API (Llama 3.3/3.2)</span>
+            <span class="tag">Multer</span>
+            <span class="tag">pdf-parse & mammoth</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Prompting Strategy & Frameworks</h2>
+        <p>The application leverages the <strong>Groq SDK</strong> to interface with state-of-the-art Llama 3 models (<code>llama-3.3-70b-versatile</code> for text and <code>llama-3.2-90b-vision-preview</code> for images). The strategy relies heavily on <strong>Zero-Shot Prompting</strong> with strict constraints. By utilizing system prompts with distinct formatting directives, the application ensures the LLM's unstructured text is deterministically parsed for the React UI.</p>
+        
+        <h3>Sample Prompt: Document Analysis (JSON Enforced)</h3>
+        <p>To populate the dashboard securely without parsing errors, the API call enforces <code>response_format: { type: 'json_object' }</code> alongside this prompt:</p>
+        <pre><code>You are an expert document analyzer. Analyze the following extracted text from a document.
+Provide your analysis strictly in JSON format. The response must be a single JSON object.
+Use the following keys:
+- documentType: A short classification (e.g. "Invoice", "Contract", "Unknown").
+- summary: A concise, beautifully structured markdown summary. Always use clear section titles.
+- entities: An array of key-value pairs representing critical identifiers.
+- confidence: A percentage integer (0-100) representing extraction confidence.
+
+Extracted Document Text:
+---
+${documentText.slice(0, 15000)}
+---</code></pre>
+
+        <h3>Sample Prompt: Conversational Chat Context</h3>
+        <pre><code>You are an AI assistant helping a user analyze a document named "${docData.filename}".
+Use the following extracted document text as your primary context to answer the user's question.
+If the answer cannot be found in the text, politely state that the document does not contain that information.
+
+FORMATTING REQUIREMENTS:
+- Always format your answers using clean Markdown with distinct section headings.
+- EVERY bullet point MUST be placed on its OWN NEW LINE starting with "- ".</code></pre>
+    </div>
+
+    <div class="card">
+        <h2>Phase-by-Phase Development Summary</h2>
+        
+        <div class="phase">
+            <div class="phase-title">Phase 1: Project Setup & Architecture</div>
+            <p>Initialized a monorepo-style structure separating <code>frontend</code> and <code>backend</code> environments. Configured Vite for the React client and set up the Express server with essential middleware like CORS and body parsers.</p>
+        </div>
+        
+        <div class="phase">
+            <div class="phase-title">Phase 2: Core Backend Engine & Extraction</div>
+            <p>Implemented file upload handling via <code>multer</code>. Integrated various parsing libraries (<code>pdf-parse</code>, <code>mammoth</code> for .docx, <code>xlsx</code> for spreadsheets) to extract raw text. Hooked up the Groq API to process this text and implemented the Llama 3 Vision model as a fallback for OCR on image files.</p>
+        </div>
+        
+        <div class="phase">
+            <div class="phase-title">Phase 3: Frontend Development & UI</div>
+            <p>Built a responsive React UI utilizing modern aesthetic principles, including dark mode, glassmorphism, and interactive backgrounds. Developed the Upload Dashboard and a split-view Analysis Page that features a document preview pane alongside the AI chat interface.</p>
+        </div>
+        
+        <div class="phase">
+            <div class="phase-title">Phase 4: Refinement & Cloud Deployment</div>
+            <p>Addressed complex deployment issues on Render. Fixed build failures caused by relative local workspace dependencies (<code>file:..</code>) and ensured environment variables (<code>VITE_API_URL</code>, <code>GROQ_API_KEY</code>) were properly mapped for production environments.</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Application Architecture</h2>
+        <p>The project follows a decoupled Client-Server architecture:</p>
+        <ul>
+            <li><strong>Client (Frontend):</strong> A React Single Page Application (SPA). It manages application state, routing, and user interactions, making RESTful HTTP requests to the backend via <code>fetch</code>.</li>
+            <li><strong>Server (Backend):</strong> An Express.js Node app acting as a broker between the client and AI services.
+                <ul>
+                    <li><code>POST /api/upload</code>: Receives multipart form data, delegates to the appropriate file parser based on mime-type, requests AI summarization, and stores metadata.</li>
+                    <li><code>POST /api/chat</code>: Receives user queries and historical context, requesting conversational responses from the Groq API.</li>
+                </ul>
+            </li>
+            <li><strong>Data Persistence:</strong> A lightweight local <code>data/</code> directory mechanism using a <code>history.json</code> file to maintain session state (designed for ephemeral cloud deployments).</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>Challenges & Resolutions</h2>
+        <ul>
+            <li><strong>Challenge:</strong> Extracting text from image-based or non-standard documents.
+                <br><span class="highlight">Resolution:</span> Integrated the <code>llama-3.2-90b-vision-preview</code> model, effectively adding robust AI-powered Optical Character Recognition (OCR) directly into the upload pipeline.</li>
+            <li><strong>Challenge:</strong> Ensuring the LLM returns consistently parsable JSON for the frontend dashboard to render correctly.
+                <br><span class="highlight">Resolution:</span> Leveraged Groq's JSON mode (<code>response_format: { type: 'json_object' }</code>) combined with an explicit JSON schema definition directly within the system prompt.</li>
+            <li><strong>Challenge:</strong> Deployment failing on PaaS (Render) due to <code>npm install</code> errors.
+                <br><span class="highlight">Resolution:</span> Identified that the <code>"pdf-analyzer-workspace": "file:.."</code> package link works locally but breaks cloud build steps. Stripped these invalid dependencies and updated the lockfiles to resolve pipeline failures.</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>Key Learnings & Reflection</h2>
+        <p>Building this application reinforced several critical concepts in modern full-stack AI development:</p>
+        <ul>
+            <li><strong>Prompt Engineering is Code:</strong> Structuring prompts with strict rules and constraints is just as vital as writing the actual backend logic. The bridge between unstructured LLM text generation and deterministic UI rendering relies entirely on robust prompt design.</li>
+            <li><strong>File Handling Nuances:</strong> Managing diverse file types (PDF vs. Word vs. Excel) requires a modular approach. Relying on specialized parsers ensures the LLM receives clean text, which drastically improves the quality of the analysis.</li>
+            <li><strong>Cloud Environment Parity:</strong> The discrepancies between local development (where relative folder structures exist) and containerized cloud deployments emphasize the importance of container-agnostic configurations and avoiding local package linking for production builds.</li>
+        </ul>
+    </div>
+
+</div>
+
+</body>
+</html>
