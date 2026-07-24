@@ -40,3 +40,12 @@ lerna-debug.log*
 # OS files
 .DS_Store
 Thumbs.db
+*.tmp
+
+# Word documents (reports, concept notes)
+*.docx
+~$*.docx
+
+# Temporary report scripts and extracted text files
+*.py
+report_text*.txt
